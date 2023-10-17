@@ -22,7 +22,7 @@ import (
 
 const (
 	envLocal = "local"
-	envProd = "production"
+	envProd  = "production"
 )
 
 func main() {
@@ -37,7 +37,6 @@ func main() {
 		log.Error("failed to initialize storage", sl.Err(err))
 		os.Exit(1)
 	}
-	defer storage.Close()
 
 	router := chi.NewRouter()
 
@@ -55,11 +54,11 @@ func main() {
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	srv := &http.Server{
-		Addr: cfg.Address,
-		Handler: router,
-		ReadTimeout: cfg.HttpServer.Timeout,
+		Addr:         cfg.Address,
+		Handler:      router,
+		ReadTimeout:  cfg.HttpServer.Timeout,
 		WriteTimeout: cfg.HttpServer.Timeout,
-		IdleTimeout: cfg.HttpServer.IdleTimeout,
+		IdleTimeout:  cfg.HttpServer.IdleTimeout,
 	}
 
 	go func() {
@@ -71,6 +70,7 @@ func main() {
 	log.Info("server started")
 
 	<-done
+
 	log.Info("stopping server")
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.CtxTimeout*time.Second)
@@ -80,6 +80,11 @@ func main() {
 		log.Error("failed to stop server", sl.Err(err))
 
 		return
+	}
+
+	err = storage.Close()
+	if err != nil {
+		log.Error("could not close storage", sl.Err(err))
 	}
 
 	log.Info("server stopped")
