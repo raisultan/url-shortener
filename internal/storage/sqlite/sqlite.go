@@ -39,6 +39,10 @@ func New(storagePath string) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
+func (s *Storage) Close() error {
+	return s.db.Close()
+}
+
 func (s *Storage) SaveUrl(urlToSave string, alias string) error {
 	const op = "storage.sqlite.SaveUrl"
 
