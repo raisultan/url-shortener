@@ -4,3 +4,4 @@ http_server:
   address: "localhost:8080"
   timeout: 3s
   idle_timeout: 60s
+  ctx_timeout: 10s

@@ -72,8 +72,7 @@ func main() {
 	<-done
 	log.Info("stopping server")
 
-	// TODO: move timeout to config
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.CtxTimeout*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
