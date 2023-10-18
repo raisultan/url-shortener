@@ -37,6 +37,11 @@ func main() {
 		log.Error("failed to initialize storage", sl.Err(err))
 		os.Exit(1)
 	}
+	defer func() {
+		if err := storage.Close(); err != nil {
+			log.Error("could not close storage", sl.Err(err))
+		}
+	}()
 
 	router := chi.NewRouter()
 
@@ -80,11 +85,6 @@ func main() {
 		log.Error("failed to stop server", sl.Err(err))
 
 		return
-	}
-
-	err = storage.Close()
-	if err != nil {
-		log.Error("could not close storage", sl.Err(err))
 	}
 
 	log.Info("server stopped")
