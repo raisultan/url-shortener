@@ -2,12 +2,6 @@ package main
 
 import (
 	"context"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/raisultan/url-shortener/internal/config"
@@ -16,8 +10,12 @@ import (
 	"github.com/raisultan/url-shortener/internal/http-server/middleware/logger"
 	"github.com/raisultan/url-shortener/internal/lib/logger/handlers/slogpretty"
 	"github.com/raisultan/url-shortener/internal/lib/logger/sl"
-	"github.com/raisultan/url-shortener/internal/storage/sqlite"
+	"github.com/raisultan/url-shortener/internal/storage/mongo"
 	"golang.org/x/exp/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -32,16 +30,23 @@ func main() {
 	log.Info("starting url-shortener", slog.String("env", cfg.Env))
 	log.Debug("debug messages are enabled")
 
-	storage, err := sqlite.New(cfg.StoragePath)
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		cfg.HttpServer.CtxTimeout,
+	)
+	defer cancel()
+
+	storage, err := mongo.New(
+		cfg.Mongo.URI,
+		cfg.Mongo.Database,
+		cfg.Mongo.Collection,
+		ctx,
+	)
 	if err != nil {
 		log.Error("failed to initialize storage", sl.Err(err))
 		os.Exit(1)
 	}
-	defer func() {
-		if err := storage.Close(); err != nil {
-			log.Error("could not close storage", sl.Err(err))
-		}
-	}()
+	defer storage.Close(ctx, log)
 
 	router := chi.NewRouter()
 
@@ -77,9 +82,6 @@ func main() {
 	<-done
 
 	log.Info("stopping server")
-
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.CtxTimeout*time.Second)
-	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Error("failed to stop server", sl.Err(err))
