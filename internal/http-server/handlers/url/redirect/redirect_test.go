@@ -1,6 +1,7 @@
 package redirect_test
 
 import (
+	"github.com/stretchr/testify/mock"
 	"net/http/httptest"
 	"testing"
 
@@ -33,7 +34,7 @@ func TestRedirectHandler(t *testing.T) {
 			urlGetterMock := mocks.NewUrlGetter(t)
 
 			if tc.respError == "" || tc.mockError != nil {
-				urlGetterMock.On("GetUrl", tc.alias).
+				urlGetterMock.On("GetUrl", mock.Anything, tc.alias).
 					Return(tc.url, tc.mockError).Once()
 			}
 
