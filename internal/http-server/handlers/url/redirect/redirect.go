@@ -29,30 +29,19 @@ func New(log *slog.Logger, urlGetter UrlGetter) http.HandlerFunc {
 		)
 
 		alias := chi.URLParam(r, "alias")
-		if alias == "" {
-			log.Info("alias is empty")
-			render.JSON(w, r, response.Error("invalid request"))
-			return
-		}
-
 		resUrl, err := urlGetter.GetUrl(r.Context(), alias)
 		if errors.Is(err, storage.ErrUrlNotFound) {
 			log.Info("url not found", "alias", alias)
-
-			render.JSON(w, r, response.Error("not found"))
-
+			render.JSON(w, r, response.Error("url not found"))
 			return
 		}
 		if err != nil {
 			log.Error("failed to get url", sl.Err(err))
-
 			render.JSON(w, r, response.Error("internal error"))
-
 			return
 		}
 
 		log.Info("got url", slog.String("url", resUrl))
-
 		http.Redirect(w, r, resUrl, http.StatusFound)
 	}
 }

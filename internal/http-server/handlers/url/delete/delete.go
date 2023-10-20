@@ -28,12 +28,6 @@ func New(log *slog.Logger, urlDeleter UrlDeleter) http.HandlerFunc {
 		)
 
 		alias := chi.URLParam(r, "alias")
-		if alias == "" {
-			log.Info("alias is empty")
-			render.JSON(w, r, response.Error("invalid request"))
-			return
-		}
-
 		err := urlDeleter.DeleteUrl(r.Context(), alias)
 		if errors.Is(err, storage.ErrUrlNotFound) {
 			log.Info("alias not found", slog.String("alias", alias))
