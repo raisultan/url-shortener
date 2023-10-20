@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/raisultan/url-shortener/internal/config"
@@ -11,6 +12,7 @@ import (
 	"github.com/raisultan/url-shortener/internal/lib/logger/handlers/slogpretty"
 	"github.com/raisultan/url-shortener/internal/lib/logger/sl"
 	"github.com/raisultan/url-shortener/internal/storage/mongo"
+	"github.com/raisultan/url-shortener/internal/storage/sqlite"
 	"golang.org/x/exp/slog"
 	"net/http"
 	"os"
@@ -22,6 +24,16 @@ const (
 	envLocal = "local"
 	envProd  = "production"
 )
+
+type Storage interface {
+	Close(_ context.Context, log *slog.Logger)
+	SaveUrl(
+		_ context.Context,
+		urlToSave string,
+		alias string,
+	) error
+	GetUrl(_ context.Context, alias string) (string, error)
+}
 
 func main() {
 	cfg := config.MustLoadConfig()
@@ -36,12 +48,7 @@ func main() {
 	)
 	defer cancel()
 
-	storage, err := mongo.New(
-		cfg.Mongo.URI,
-		cfg.Mongo.Database,
-		cfg.Mongo.Collection,
-		ctx,
-	)
+	storage, err := NewStorage(cfg, ctx)
 	if err != nil {
 		log.Error("failed to initialize storage", sl.Err(err))
 		os.Exit(1)
@@ -90,6 +97,23 @@ func main() {
 	}
 
 	log.Info("server stopped")
+}
+
+func NewStorage(cfg *config.Config, ctx context.Context) (Storage, error) {
+	switch cfg.ActiveStorage {
+	case "sqlite":
+		return sqlite.New(
+			cfg.Storages,
+			ctx,
+		)
+	case "mongo":
+		return mongo.New(
+			cfg.Storages,
+			ctx,
+		)
+	default:
+		return nil, fmt.Errorf("unsupported storage type: %s", cfg.ActiveStorage)
+	}
 }
 
 func setupLogger(env string) *slog.Logger {

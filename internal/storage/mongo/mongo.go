@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/raisultan/url-shortener/internal/config"
 	"github.com/raisultan/url-shortener/internal/lib/logger/sl"
 	"github.com/raisultan/url-shortener/internal/storage"
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,20 +18,18 @@ type Storage struct {
 }
 
 func New(
-	uri string,
-	databaseName string,
-	collectionName string,
+	config config.Storages,
 	ctx context.Context,
 ) (*Storage, error) {
 	const op = "storage.mongo.New"
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.Mongo.URI))
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return &Storage{
-		db: client.Database(databaseName).Collection(collectionName),
+		db: client.Database(config.Mongo.Database).Collection(config.Mongo.Collection),
 	}, nil
 }
 

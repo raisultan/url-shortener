@@ -8,10 +8,10 @@ import (
 )
 
 type Config struct {
-	Env         string `yaml:"env" env-default:"local"`
-	StoragePath string `yaml:"storage_path" env-required:"true"`
-	HttpServer  `yaml:"http_server"`
-	Mongo       `yaml:"mongo"`
+	Env           string `yaml:"env" env-default:"local"`
+	HttpServer    `yaml:"http_server"`
+	Storages      `yaml:"storages"`
+	ActiveStorage string `yaml:"active_storage" env-default:"sqlite"`
 }
 
 type HttpServer struct {
@@ -21,7 +21,16 @@ type HttpServer struct {
 	CtxTimeout  time.Duration `yaml:"ctx_timeout" env-default:"8s"`
 }
 
-type Mongo struct {
+type Storages struct {
+	SQLite SQLiteConfig `yaml:"sqlite"`
+	Mongo  MongoConfig  `yaml:"mongo"`
+}
+
+type SQLiteConfig struct {
+	StoragePath string `yaml:"storage_path" env-required:"true"`
+}
+
+type MongoConfig struct {
 	URI        string `yaml:"uri" env-required:"true"`
 	Database   string `yaml:"database" env-default:"url-db"`
 	Collection string `yaml:"collection" env-default:"urls"`

@@ -1,9 +1,13 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/raisultan/url-shortener/internal/config"
+	"github.com/raisultan/url-shortener/internal/lib/logger/sl"
+	"golang.org/x/exp/slog"
 
 	"github.com/mattn/go-sqlite3"
 	"github.com/raisultan/url-shortener/internal/storage"
@@ -13,10 +17,10 @@ type Storage struct {
 	db *sql.DB
 }
 
-func New(storagePath string) (*Storage, error) {
+func New(config config.Storages, _ context.Context) (*Storage, error) {
 	const op = "storage.sqlite.New"
 
-	db, err := sql.Open("sqlite3", storagePath)
+	db, err := sql.Open("sqlite3", config.SQLite.StoragePath)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -39,11 +43,14 @@ func New(storagePath string) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (s *Storage) Close() error {
-	return s.db.Close()
+func (s *Storage) Close(_ context.Context, log *slog.Logger) {
+	err := s.db.Close()
+	if err != nil {
+		log.Error("could not close storage", sl.Err(err))
+	}
 }
 
-func (s *Storage) SaveUrl(urlToSave string, alias string) error {
+func (s *Storage) SaveUrl(_ context.Context, urlToSave string, alias string) error {
 	const op = "storage.sqlite.SaveUrl"
 
 	stmt, err := s.db.Prepare("INSERT INTO url(url, alias) VALUES(?, ?)")
@@ -63,7 +70,7 @@ func (s *Storage) SaveUrl(urlToSave string, alias string) error {
 	return nil
 }
 
-func (s *Storage) GetUrl(alias string) (string, error) {
+func (s *Storage) GetUrl(_ context.Context, alias string) (string, error) {
 	const op = "storage.sqlite.GetUrl"
 
 	stmt, err := s.db.Prepare("SELECT url FROM url WHERE alias = ?")
