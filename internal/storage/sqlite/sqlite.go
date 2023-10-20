@@ -35,6 +35,7 @@ func New(config config.Storages, _ context.Context) (*Storage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
+	defer func() { _ = stmt.Close() }()
 
 	_, err = stmt.Exec()
 	if err != nil {
@@ -57,6 +58,7 @@ func (s *Storage) SaveUrl(_ context.Context, urlToSave string, alias string) err
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
+	defer func() { _ = stmt.Close() }()
 
 	_, err = stmt.Exec(urlToSave, alias)
 	if err != nil {
@@ -77,6 +79,7 @@ func (s *Storage) GetUrl(_ context.Context, alias string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("%s: prepare statement %w", op, err)
 	}
+	defer func() { _ = stmt.Close() }()
 
 	var resUrl string
 	err = stmt.QueryRow(alias).Scan(&resUrl)
@@ -88,4 +91,30 @@ func (s *Storage) GetUrl(_ context.Context, alias string) (string, error) {
 	}
 
 	return resUrl, nil
+}
+
+func (s *Storage) DeleteUrl(_ context.Context, alias string) error {
+	const op = "storage.sqlite.DeleteUrl"
+
+	stmt, err := s.db.Prepare("DELETE FROM url WHERE alias = ?")
+	if err != nil {
+		return fmt.Errorf("%s: prepare statement: %w", op, err)
+	}
+	defer func() { _ = stmt.Close() }()
+
+	result, err := stmt.Exec(alias)
+	if err != nil {
+		return fmt.Errorf("%s: execute statement: %w", op, err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s: check affected rows: %w", op, err)
+	}
+
+	if rowsAffected == 0 {
+		return storage.ErrUrlNotFound
+	}
+
+	return nil
 }

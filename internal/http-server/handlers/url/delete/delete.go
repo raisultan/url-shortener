@@ -1,10 +1,8 @@
-package redirect
+package delete
 
 import (
 	"context"
 	"errors"
-	"net/http"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
@@ -12,18 +10,19 @@ import (
 	"github.com/raisultan/url-shortener/internal/lib/logger/sl"
 	"github.com/raisultan/url-shortener/internal/storage"
 	"golang.org/x/exp/slog"
+	"net/http"
 )
 
-//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlGetter
-type UrlGetter interface {
-	GetUrl(ctx context.Context, alias string) (string, error)
+//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlDeleter
+type UrlDeleter interface {
+	DeleteUrl(ctx context.Context, alias string) error
 }
 
-func New(log *slog.Logger, urlGetter UrlGetter) http.HandlerFunc {
+func New(log *slog.Logger, urlDeleter UrlDeleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.url.redirect.New"
+		const op = "handlers.url.delete.New"
 
-		log := log.With(
+		log = log.With(
 			slog.String("op", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
@@ -35,24 +34,19 @@ func New(log *slog.Logger, urlGetter UrlGetter) http.HandlerFunc {
 			return
 		}
 
-		resUrl, err := urlGetter.GetUrl(r.Context(), alias)
+		err := urlDeleter.DeleteUrl(r.Context(), alias)
 		if errors.Is(err, storage.ErrUrlNotFound) {
-			log.Info("url not found", "alias", alias)
-
-			render.JSON(w, r, response.Error("not found"))
-
+			log.Info("alias not found", slog.String("alias", alias))
+			render.JSON(w, r, response.Error("alias not found"))
 			return
 		}
 		if err != nil {
-			log.Error("failed to get url", sl.Err(err))
-
-			render.JSON(w, r, response.Error("internal error"))
-
+			log.Error("failed to delete url", sl.Err(err))
+			render.JSON(w, r, response.Error("failed to delete url"))
 			return
 		}
 
-		log.Info("got url", slog.String("url", resUrl))
-
-		http.Redirect(w, r, resUrl, http.StatusFound)
+		log.Info("url deleted")
+		render.JSON(w, r, response.OK())
 	}
 }

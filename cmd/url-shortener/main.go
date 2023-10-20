@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/raisultan/url-shortener/internal/config"
+	"github.com/raisultan/url-shortener/internal/http-server/handlers/url/delete"
 	"github.com/raisultan/url-shortener/internal/http-server/handlers/url/redirect"
 	"github.com/raisultan/url-shortener/internal/http-server/handlers/url/save"
 	"github.com/raisultan/url-shortener/internal/http-server/middleware/logger"
@@ -33,6 +34,7 @@ type Storage interface {
 		alias string,
 	) error
 	GetUrl(_ context.Context, alias string) (string, error)
+	DeleteUrl(_ context.Context, alias string) error
 }
 
 func main() {
@@ -64,6 +66,7 @@ func main() {
 
 	router.Post("/url", save.New(log, storage))
 	router.Get("/{alias}", redirect.New(log, storage))
+	router.Delete("/{alias}", delete.New(log, storage))
 
 	log.Info("starting server", slog.String("address", cfg.Address))
 

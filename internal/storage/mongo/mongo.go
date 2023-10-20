@@ -72,3 +72,16 @@ func (s *Storage) GetUrl(ctx context.Context, alias string) (string, error) {
 
 	return result.Url, nil
 }
+
+func (s *Storage) DeleteUrl(ctx context.Context, alias string) error {
+	result, err := s.db.DeleteOne(ctx, bson.D{{"alias", alias}})
+	if err != nil {
+		return fmt.Errorf("failed to delete document with the alias %s: %w", alias, err)
+	}
+
+	if result.DeletedCount == 0 {
+		return storage.ErrUrlNotFound
+	}
+
+	return nil
+}
