@@ -1,4 +1,4 @@
 [+] Deletion Endpoint
-[ ] Deletion Endpoint Tests
+[+] Deletion Endpoint Tests
 [ ] KGS
 [ ] Analytics Storage

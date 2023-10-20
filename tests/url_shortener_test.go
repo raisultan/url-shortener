@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
@@ -98,8 +99,6 @@ func TestURLShortener_SaveRedirect(t *testing.T) {
 				alias = resp.Value("alias").String().Raw()
 			}
 
-			// Redirect
-
 			testRedirect(t, alias, tc.url)
 		})
 	}
@@ -116,4 +115,56 @@ func testRedirect(t *testing.T, alias string, urlToRedirect string) {
 	require.NoError(t, err)
 
 	require.Equal(t, urlToRedirect, redirectedToURL)
+}
+
+func TestURLShortener_Delete(t *testing.T) {
+	testCases := []struct {
+		name             string
+		alias            string
+		expectedResponse string
+		isError          bool
+	}{
+		{
+			name:             "Valid Alias",
+			alias:            gofakeit.Word() + gofakeit.Word(),
+			expectedResponse: "OK",
+		},
+		{
+			name:             "Invalid Alias",
+			alias:            gofakeit.Word(),
+			expectedResponse: "alias not found",
+			isError:          true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			u := url.URL{
+				Scheme: "http",
+				Host:   host,
+			}
+
+			e := httpexpect.Default(t, u.String())
+
+			if tc.expectedResponse == "OK" {
+				e.POST("/url").
+					WithJSON(save.Request{
+						Url:   gofakeit.URL(),
+						Alias: tc.alias,
+					}).
+					Expect().Status(http.StatusOK).
+					JSON().Object().Value("alias").String().IsEqual(tc.alias)
+			}
+
+			deleteResp := e.DELETE(fmt.Sprintf("/%s", tc.alias)).
+				Expect().Status(http.StatusOK).
+				JSON().Object()
+
+			if tc.isError == true {
+				deleteResp.Value("error").String().IsEqual(tc.expectedResponse)
+			} else {
+				deleteResp.Value("status").String().IsEqual(tc.expectedResponse)
+			}
+		})
+	}
 }
