@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-redis/redis/v8"
-	"github.com/raisultan/url-shortener/internal/config"
-	"github.com/raisultan/url-shortener/internal/lib/logger/sl"
+	"github.com/raisultan/url-shortener/services/main/internal/config"
+	"github.com/raisultan/url-shortener/services/main/internal/lib/logger/sl"
 	"golang.org/x/exp/slog"
 	"time"
 )

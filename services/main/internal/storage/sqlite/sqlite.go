@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/raisultan/url-shortener/internal/config"
-	"github.com/raisultan/url-shortener/internal/lib/logger/sl"
+	"github.com/raisultan/url-shortener/services/main/internal/config"
+	"github.com/raisultan/url-shortener/services/main/internal/lib/logger/sl"
+	"github.com/raisultan/url-shortener/services/main/internal/storage"
 	"golang.org/x/exp/slog"
 
 	"github.com/mattn/go-sqlite3"
-	"github.com/raisultan/url-shortener/internal/storage"
 )
 
 type Storage struct {

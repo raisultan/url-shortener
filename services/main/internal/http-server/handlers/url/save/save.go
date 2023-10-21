@@ -3,15 +3,15 @@ package save
 import (
 	"context"
 	"errors"
+	"github.com/raisultan/url-shortener/services/main/internal/lib/api/response"
+	"github.com/raisultan/url-shortener/services/main/internal/lib/logger/sl"
+	"github.com/raisultan/url-shortener/services/main/internal/lib/random"
+	"github.com/raisultan/url-shortener/services/main/internal/storage"
 	"net/http"
 
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
-	"github.com/raisultan/url-shortener/internal/lib/api/response"
-	"github.com/raisultan/url-shortener/internal/lib/logger/sl"
-	"github.com/raisultan/url-shortener/internal/lib/random"
-	"github.com/raisultan/url-shortener/internal/storage"
 	"golang.org/x/exp/slog"
 )
 

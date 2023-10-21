@@ -2,15 +2,15 @@ package tests
 
 import (
 	"fmt"
+	"github.com/raisultan/url-shortener/services/main/internal/http-server/handlers/url/save"
+	"github.com/raisultan/url-shortener/services/main/internal/lib/api"
+	"github.com/raisultan/url-shortener/services/main/internal/lib/random"
 	"net/http"
 	"net/url"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/gavv/httpexpect/v2"
-	"github.com/raisultan/url-shortener/internal/http-server/handlers/url/save"
-	"github.com/raisultan/url-shortener/internal/lib/api"
-	"github.com/raisultan/url-shortener/internal/lib/random"
 	"github.com/stretchr/testify/require"
 )
 

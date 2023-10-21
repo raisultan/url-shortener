@@ -1,4 +1,4 @@
 .vscode
-/storage/storage.db
+/services/main/storage/storage.db
 .idea
-config/local.yaml
+services/main/config/local.yaml

@@ -6,9 +6,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
-	"github.com/raisultan/url-shortener/internal/lib/api/response"
-	"github.com/raisultan/url-shortener/internal/lib/logger/sl"
-	"github.com/raisultan/url-shortener/internal/storage"
+	"github.com/raisultan/url-shortener/services/main/internal/lib/api/response"
+	"github.com/raisultan/url-shortener/services/main/internal/lib/logger/sl"
+	"github.com/raisultan/url-shortener/services/main/internal/storage"
 	"golang.org/x/exp/slog"
 	"net/http"
 )
