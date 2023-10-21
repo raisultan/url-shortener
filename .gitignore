@@ -1,5 +1,5 @@
 .vscode
 /services/main/storage/storage.db
 .idea
-services/main/config/local.yaml
-services/key-gen/config/local.yaml
+/services/main/config/local.yaml
+/services/alias-gen/config/local.yaml
