@@ -13,12 +13,21 @@ import (
 	"net/http"
 )
 
-//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlDeleter
-type UrlDeleter interface {
+//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlDeleterStorage
+type UrlDeleterStorage interface {
 	DeleteUrl(ctx context.Context, alias string) error
 }
 
-func New(log *slog.Logger, urlDeleter UrlDeleter) http.HandlerFunc {
+//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlDeleterCache
+type UrlDeleterCache interface {
+	DeleteUrl(ctx context.Context, alias string) error
+}
+
+func New(
+	log *slog.Logger,
+	urlDeleterStorage UrlDeleterStorage,
+	urlDeleterCache UrlDeleterCache,
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.url.delete.New"
 
@@ -28,7 +37,7 @@ func New(log *slog.Logger, urlDeleter UrlDeleter) http.HandlerFunc {
 		)
 
 		alias := chi.URLParam(r, "alias")
-		err := urlDeleter.DeleteUrl(r.Context(), alias)
+		err := urlDeleterStorage.DeleteUrl(r.Context(), alias)
 		if errors.Is(err, storage.ErrUrlNotFound) {
 			log.Info("alias not found", slog.String("alias", alias))
 			render.JSON(w, r, response.Error("alias not found"))
@@ -38,6 +47,11 @@ func New(log *slog.Logger, urlDeleter UrlDeleter) http.HandlerFunc {
 			log.Error("failed to delete url", sl.Err(err))
 			render.JSON(w, r, response.Error("failed to delete url"))
 			return
+		}
+
+		err = urlDeleterCache.DeleteUrl(r.Context(), alias)
+		if err != nil {
+			log.Error("failed to delete url from cache", sl.Err(err))
 		}
 
 		log.Info("url deleted")

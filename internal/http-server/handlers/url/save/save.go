@@ -27,8 +27,8 @@ type Response struct {
 
 const aliasLength = 6
 
-//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlSaver
-type UrlSaver interface {
+//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlSaverStorage
+type UrlSaverStorage interface {
 	SaveUrl(
 		ctx context.Context,
 		urlToSave string,
@@ -36,7 +36,20 @@ type UrlSaver interface {
 	) error
 }
 
-func New(log *slog.Logger, urlSaver UrlSaver) http.HandlerFunc {
+//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlSaverCache
+type UrlSaverCache interface {
+	SaveUrl(
+		ctx context.Context,
+		urlToSave string,
+		alias string,
+	) error
+}
+
+func New(
+	log *slog.Logger,
+	urlSaverStorage UrlSaverStorage,
+	urlSaverCache UrlSaverCache,
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.url.save.New"
 
@@ -69,7 +82,7 @@ func New(log *slog.Logger, urlSaver UrlSaver) http.HandlerFunc {
 			alias = random.NewRandomString(aliasLength)
 		}
 
-		err = urlSaver.SaveUrl(r.Context(), req.Url, alias)
+		err = urlSaverStorage.SaveUrl(r.Context(), req.Url, alias)
 		if errors.Is(err, storage.ErrUrlExists) {
 			log.Info("url already exists", slog.String("url", req.Url))
 			render.JSON(w, r, response.Error("url already exists"))
@@ -79,6 +92,11 @@ func New(log *slog.Logger, urlSaver UrlSaver) http.HandlerFunc {
 			log.Error("failed to add url", sl.Err(err))
 			render.JSON(w, r, response.Error("failed to add url"))
 			return
+		}
+
+		err = urlSaverCache.SaveUrl(r.Context(), req.Url, alias)
+		if err != nil {
+			log.Error("failed to add url to cache", sl.Err(err))
 		}
 
 		log.Info("url added")

@@ -12,6 +12,7 @@ type Config struct {
 	HttpServer    `yaml:"http_server"`
 	Storages      `yaml:"storages"`
 	ActiveStorage string `yaml:"active_storage" env-default:"sqlite"`
+	Cache         `yaml:"cache"`
 }
 
 type HttpServer struct {
@@ -24,6 +25,10 @@ type HttpServer struct {
 type Storages struct {
 	SQLite SQLiteConfig `yaml:"sqlite"`
 	Mongo  MongoConfig  `yaml:"mongo"`
+}
+
+type Cache struct {
+	URL string `yaml:"url" env-default:"redis://localhost:6379/0"`
 }
 
 type SQLiteConfig struct {

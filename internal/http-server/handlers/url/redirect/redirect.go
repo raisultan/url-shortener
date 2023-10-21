@@ -14,12 +14,21 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlGetter
-type UrlGetter interface {
+//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlGetterStorage
+type UrlGetterStorage interface {
 	GetUrl(ctx context.Context, alias string) (string, error)
 }
 
-func New(log *slog.Logger, urlGetter UrlGetter) http.HandlerFunc {
+//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlGetterCache
+type UrlGetterCache interface {
+	GetUrl(ctx context.Context, alias string) (string, error)
+}
+
+func New(
+	log *slog.Logger,
+	urlGetterStorage UrlGetterStorage,
+	urlGetterCache UrlGetterCache,
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.url.redirect.New"
 
@@ -29,7 +38,16 @@ func New(log *slog.Logger, urlGetter UrlGetter) http.HandlerFunc {
 		)
 
 		alias := chi.URLParam(r, "alias")
-		resUrl, err := urlGetter.GetUrl(r.Context(), alias)
+		resUrl, err := urlGetterCache.GetUrl(r.Context(), alias)
+		if err != nil {
+			log.Info("url not found in cache", "alias", alias)
+		} else {
+			log.Info("got url from cache", slog.String("url", resUrl))
+			http.Redirect(w, r, resUrl, http.StatusFound)
+			return
+		}
+
+		resUrl, err = urlGetterStorage.GetUrl(r.Context(), alias)
 		if errors.Is(err, storage.ErrUrlNotFound) {
 			log.Info("url not found", "alias", alias)
 			render.JSON(w, r, response.Error("url not found"))
@@ -41,7 +59,7 @@ func New(log *slog.Logger, urlGetter UrlGetter) http.HandlerFunc {
 			return
 		}
 
-		log.Info("got url", slog.String("url", resUrl))
+		log.Info("got url from storage", slog.String("url", resUrl))
 		http.Redirect(w, r, resUrl, http.StatusFound)
 	}
 }

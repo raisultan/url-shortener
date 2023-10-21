@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/raisultan/url-shortener/internal/cache/redis"
 	"github.com/raisultan/url-shortener/internal/config"
 	"github.com/raisultan/url-shortener/internal/http-server/handlers/url/delete"
 	"github.com/raisultan/url-shortener/internal/http-server/handlers/url/redirect"
@@ -57,6 +58,13 @@ func main() {
 	}
 	defer storage.Close(ctx, log)
 
+	cache, err := redis.New(cfg.Cache, ctx)
+	if err != nil {
+		log.Error("failed to initialize cache", sl.Err(err))
+		os.Exit(1)
+	}
+	defer cache.Close(log)
+
 	router := chi.NewRouter()
 
 	router.Use(middleware.RequestID)
@@ -64,9 +72,9 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
-	router.Post("/url", save.New(log, storage))
-	router.Get("/{alias}", redirect.New(log, storage))
-	router.Delete("/{alias}", delete.New(log, storage))
+	router.Post("/url", save.New(log, storage, cache))
+	router.Get("/{alias}", redirect.New(log, storage, cache))
+	router.Delete("/{alias}", delete.New(log, storage, cache))
 
 	log.Info("starting server", slog.String("address", cfg.Address))
 
