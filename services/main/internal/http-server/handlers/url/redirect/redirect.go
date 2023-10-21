@@ -3,8 +3,8 @@ package redirect
 import (
 	"context"
 	"errors"
-	"github.com/raisultan/url-shortener/services/main/internal/lib/api/response"
-	"github.com/raisultan/url-shortener/services/main/internal/lib/logger/sl"
+	"github.com/raisultan/url-shortener/lib/api/response"
+	"github.com/raisultan/url-shortener/lib/logger/sl"
 	"github.com/raisultan/url-shortener/services/main/internal/storage"
 	"net/http"
 
@@ -54,7 +54,7 @@ func New(
 			return
 		}
 		if err != nil {
-			log.Error("failed to get url", sl.Err(err))
+			log.Error("failed to generate url", sl.Err(err))
 			render.JSON(w, r, response.Error("internal error"))
 			return
 		}

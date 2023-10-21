@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	middlewareLogger "github.com/raisultan/url-shortener/lib/http-server/middleware/logger"
+	"github.com/raisultan/url-shortener/lib/logger"
+	"github.com/raisultan/url-shortener/lib/logger/sl"
 	"github.com/raisultan/url-shortener/services/main/internal/cache/redis"
 	"github.com/raisultan/url-shortener/services/main/internal/config"
 	"github.com/raisultan/url-shortener/services/main/internal/http-server/handlers/url/delete"
 	"github.com/raisultan/url-shortener/services/main/internal/http-server/handlers/url/redirect"
 	"github.com/raisultan/url-shortener/services/main/internal/http-server/handlers/url/save"
-	"github.com/raisultan/url-shortener/services/main/internal/http-server/middleware/logger"
-	"github.com/raisultan/url-shortener/services/main/internal/lib/logger/handlers/slogpretty"
-	"github.com/raisultan/url-shortener/services/main/internal/lib/logger/sl"
 	"github.com/raisultan/url-shortener/services/main/internal/storage/mongo"
 	"github.com/raisultan/url-shortener/services/main/internal/storage/sqlite"
 	"golang.org/x/exp/slog"
@@ -20,11 +20,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-)
-
-const (
-	envLocal = "local"
-	envProd  = "production"
 )
 
 type Storage interface {
@@ -40,7 +35,7 @@ type Storage interface {
 
 func main() {
 	cfg := config.MustLoadConfig()
-	log := setupLogger(cfg.Env)
+	log := logger.SetupLogger(cfg.Env)
 
 	log.Info("starting url-shortener", slog.String("env", cfg.Env))
 	log.Debug("debug messages are enabled")
@@ -68,7 +63,7 @@ func main() {
 	router := chi.NewRouter()
 
 	router.Use(middleware.RequestID)
-	router.Use(logger.New(log))
+	router.Use(middlewareLogger.New(log))
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
@@ -82,7 +77,7 @@ func main() {
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	srv := &http.Server{
-		Addr:         cfg.Address,
+		Addr:         cfg.HttpServer.Address,
 		Handler:      router,
 		ReadTimeout:  cfg.HttpServer.Timeout,
 		WriteTimeout: cfg.HttpServer.Timeout,
@@ -125,35 +120,4 @@ func NewStorage(cfg *config.Config, ctx context.Context) (Storage, error) {
 	default:
 		return nil, fmt.Errorf("unsupported storage type: %s", cfg.ActiveStorage)
 	}
-}
-
-func setupLogger(env string) *slog.Logger {
-	var log *slog.Logger
-
-	switch env {
-	case envLocal:
-		log = setupPrettySlog()
-	case envProd:
-		log = slog.New(
-			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
-		)
-	default:
-		log = slog.New(
-			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
-		)
-	}
-
-	return log
-}
-
-func setupPrettySlog() *slog.Logger {
-	opts := slogpretty.PrettyHandlerOptions{
-		SlogOpts: &slog.HandlerOptions{
-			Level: slog.LevelDebug,
-		},
-	}
-
-	handler := opts.NewPrettyHandler(os.Stdout)
-
-	return slog.New(handler)
 }

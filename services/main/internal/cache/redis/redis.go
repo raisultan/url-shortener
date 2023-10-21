@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"github.com/raisultan/url-shortener/lib/logger/sl"
 	"github.com/raisultan/url-shortener/services/main/internal/config"
-	"github.com/raisultan/url-shortener/services/main/internal/lib/logger/sl"
 	"golang.org/x/exp/slog"
 	"time"
 )
@@ -56,7 +56,7 @@ func (c *Cache) GetUrl(ctx context.Context, alias string) (string, error) {
 
 	url, err := c.client.Get(ctx, alias).Result()
 	if err != nil {
-		return "", fmt.Errorf("%s: could not get url from cache %w", op, err)
+		return "", fmt.Errorf("%s: could not generate url from cache %w", op, err)
 	}
 
 	return url, nil

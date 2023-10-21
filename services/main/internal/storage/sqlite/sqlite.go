@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/raisultan/url-shortener/lib/logger/sl"
 	"github.com/raisultan/url-shortener/services/main/internal/config"
-	"github.com/raisultan/url-shortener/services/main/internal/lib/logger/sl"
 	"github.com/raisultan/url-shortener/services/main/internal/storage"
 	"golang.org/x/exp/slog"
 
@@ -26,11 +26,11 @@ func New(config config.Storages, _ context.Context) (*Storage, error) {
 	}
 
 	stmt, err := db.Prepare(`
-	CREATE TABLE IF NOT EXISTS url(
-		id INTEGER PRIMARY KEY,
-		alias TEXT NOT NULL UNIQUE,
-		url TEXT NOT NULL);
-	CREATE INDEX IF NOT EXISTS idx_alias ON url(alias);
+		CREATE TABLE IF NOT EXISTS url(
+			id INTEGER PRIMARY KEY,
+			alias TEXT NOT NULL UNIQUE,
+			url TEXT NOT NULL);
+		CREATE INDEX IF NOT EXISTS idx_alias ON url(alias);
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)

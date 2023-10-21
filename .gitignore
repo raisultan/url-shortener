@@ -2,3 +2,4 @@
 /services/main/storage/storage.db
 .idea
 services/main/config/local.yaml
+services/key-gen/config/local.yaml

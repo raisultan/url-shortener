@@ -3,8 +3,8 @@ package save
 import (
 	"context"
 	"errors"
-	"github.com/raisultan/url-shortener/services/main/internal/lib/api/response"
-	"github.com/raisultan/url-shortener/services/main/internal/lib/logger/sl"
+	"github.com/raisultan/url-shortener/lib/api/response"
+	"github.com/raisultan/url-shortener/lib/logger/sl"
 	"github.com/raisultan/url-shortener/services/main/internal/lib/random"
 	"github.com/raisultan/url-shortener/services/main/internal/storage"
 	"net/http"
