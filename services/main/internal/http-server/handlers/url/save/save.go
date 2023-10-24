@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/raisultan/url-shortener/lib/api/response"
 	"github.com/raisultan/url-shortener/lib/logger/sl"
-	"github.com/raisultan/url-shortener/services/main/internal/lib/random"
 	"github.com/raisultan/url-shortener/services/main/internal/storage"
 	"net/http"
 
@@ -25,8 +24,6 @@ type Response struct {
 	Alias string `json:"alias,omitempty"`
 }
 
-const aliasLength = 6
-
 //go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlSaverStorage
 type UrlSaverStorage interface {
 	SaveUrl(
@@ -45,10 +42,16 @@ type UrlSaverCache interface {
 	) error
 }
 
+//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=AliasGenerator
+type AliasGenerator interface {
+	GenerateAlias() (string, error)
+}
+
 func New(
 	log *slog.Logger,
 	urlSaverStorage UrlSaverStorage,
 	urlSaverCache UrlSaverCache,
+	aliasGenerator AliasGenerator,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.url.save.New"
@@ -79,7 +82,12 @@ func New(
 
 		alias := req.Alias
 		if alias == "" {
-			alias = random.NewRandomString(aliasLength)
+			alias, err = aliasGenerator.GenerateAlias()
+			if err != nil {
+				log.Error("failed to get alias", sl.Err(err))
+				render.JSON(w, r, response.Error("failed to get alias"))
+				return
+			}
 		}
 
 		err = urlSaverStorage.SaveUrl(r.Context(), req.Url, alias)

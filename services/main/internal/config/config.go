@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	Env           string `yaml:"env" env-default:"local"`
-	HttpServer    `yaml:"http_server"`
-	Storages      `yaml:"storages"`
-	ActiveStorage string `yaml:"active_storage" env-default:"sqlite"`
-	Cache         `yaml:"cache"`
+	Env            string `yaml:"env" env-default:"local"`
+	HttpServer     `yaml:"http_server"`
+	Storages       `yaml:"storages"`
+	ActiveStorage  string `yaml:"active_storage" env-default:"sqlite"`
+	Cache          `yaml:"cache"`
+	AliasGenerator `yaml:"alias_generator"`
 }
 
 type HttpServer struct {
@@ -20,6 +21,11 @@ type HttpServer struct {
 	Timeout     time.Duration `yaml:"timeout" env-default:"3s"`
 	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
 	CtxTimeout  time.Duration `yaml:"ctx_timeout" env-default:"8s"`
+}
+
+type AliasGenerator struct {
+	Address string        `yaml:"address" env-default:"http://localhost:8082"`
+	Timeout time.Duration `yaml:"timeout" env-default:"3s"`
 }
 
 type Storages struct {

@@ -22,7 +22,7 @@ func main() {
 	cfg := config.MustLoadConfig()
 	log := logger.SetupLogger(cfg.Env)
 
-	log.Info("starting key-generator", slog.String("env", cfg.Env))
+	log.Info("starting alias-generator", slog.String("env", cfg.Env))
 	log.Debug("debug messages are enabled")
 
 	storage, err := postgres.New(cfg.Postgres)
