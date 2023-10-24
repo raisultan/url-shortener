@@ -5,8 +5,10 @@ import (
 	"errors"
 	"github.com/raisultan/url-shortener/lib/api/response"
 	"github.com/raisultan/url-shortener/lib/logger/sl"
+	"github.com/raisultan/url-shortener/services/main/internal/analytics"
 	"github.com/raisultan/url-shortener/services/main/internal/storage"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -24,10 +26,16 @@ type UrlGetterCache interface {
 	GetUrl(ctx context.Context, alias string) (string, error)
 }
 
+//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=AnalyticsTracker
+type AnalyticsTracker interface {
+	TrackClickEvent(event analytics.ClickEvent) error
+}
+
 func New(
 	log *slog.Logger,
 	urlGetterStorage UrlGetterStorage,
 	urlGetterCache UrlGetterCache,
+	analyticsTracker AnalyticsTracker,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.url.redirect.New"
@@ -36,6 +44,8 @@ func New(
 			slog.String("op", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
+
+		startTime := time.Now()
 
 		alias := chi.URLParam(r, "alias")
 		resUrl, err := urlGetterCache.GetUrl(r.Context(), alias)
@@ -58,6 +68,18 @@ func New(
 			render.JSON(w, r, response.Error("internal error"))
 			return
 		}
+
+		latency := time.Since(startTime)
+
+		event := analytics.ClickEvent{
+			URLAlias:  alias,
+			Timestamp: time.Now(),
+			UserAgent: r.UserAgent(),
+			IP:        r.RemoteAddr,
+			Referrer:  r.Referer(),
+			Latency:   latency,
+		}
+		go analyticsTracker.TrackClickEvent(event)
 
 		log.Info("got url from storage", slog.String("url", resUrl))
 		http.Redirect(w, r, resUrl, http.StatusFound)

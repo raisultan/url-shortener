@@ -9,6 +9,7 @@ import (
 	"github.com/raisultan/url-shortener/lib/logger"
 	"github.com/raisultan/url-shortener/lib/logger/sl"
 	"github.com/raisultan/url-shortener/services/main/internal/alias"
+	"github.com/raisultan/url-shortener/services/main/internal/analytics/clickhouse"
 	"github.com/raisultan/url-shortener/services/main/internal/cache/redis"
 	"github.com/raisultan/url-shortener/services/main/internal/config"
 	"github.com/raisultan/url-shortener/services/main/internal/http-server/handlers/url/delete"
@@ -69,8 +70,10 @@ func main() {
 	router.Use(middleware.URLFormat)
 
 	agc := alias.NewAliasGeneratorClient(cfg.AliasGenerator)
+	analyticsTracker := clickhouse.NewClickHouseAnalyticsTracker()
+
 	router.Post("/url", save.New(log, storage, cache, agc))
-	router.Get("/{alias}", redirect.New(log, storage, cache))
+	router.Get("/{alias}", redirect.New(log, storage, cache, analyticsTracker))
 	router.Delete("/{alias}", delete.New(log, storage, cache))
 
 	log.Info("starting server", slog.String("address", cfg.HttpServer.Address))
