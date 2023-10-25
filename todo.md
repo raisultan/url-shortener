@@ -11,6 +11,11 @@
     - [x] Add KGS to MonoRepo
     - [x] Add KGS call to Main Service
 [ ] Analytics Storage with UI
+    - [x] Base Event Model
+    - [x] Add ClickHouse
+    - [x] Send Event To ClickHouse
+    - [ ] Extend Event
+    - [ ] Add Metabase UI
 
 ## Analytics
 ### Usage Analytics
@@ -35,4 +40,14 @@ UI: Metabase
 Start Postgres Container
 ```shell
 docker run --name alias-gen-postgres -e POSTGRES_USER=alias-gen -e POSTGRES_PASSWORD=alias-gen -e POSTGRES_DB=url-aliases -d -p 5432:5432 postgres
+```
+
+Start ClickHouse Container
+```shell
+docker run -d --name clickhouse-server \
+    --ulimit nofile=262144:262144 \
+    -p 9000:9000 -p 8123:8123 \
+    -e CLICKHOUSE_DB=testing \
+    -e CLICKHOUSE_SERVER__LISTEN_HOST='0.0.0.0' \
+    yandex/clickhouse-server
 ```

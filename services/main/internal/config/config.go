@@ -14,6 +14,7 @@ type Config struct {
 	ActiveStorage  string `yaml:"active_storage" env-default:"sqlite"`
 	Cache          `yaml:"cache"`
 	AliasGenerator `yaml:"alias_generator"`
+	ClickHouse     `yaml:"clickhouse"`
 }
 
 type HttpServer struct {
@@ -26,6 +27,10 @@ type HttpServer struct {
 type AliasGenerator struct {
 	Address string        `yaml:"address" env-default:"http://localhost:8082"`
 	Timeout time.Duration `yaml:"timeout" env-default:"3s"`
+}
+
+type ClickHouse struct {
+	Dsn string `yaml:"dsn" env-required:"true"`
 }
 
 type Storages struct {

@@ -3,6 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	middlewareLogger "github.com/raisultan/url-shortener/lib/http-server/middleware/logger"
@@ -18,10 +23,6 @@ import (
 	"github.com/raisultan/url-shortener/services/main/internal/storage/mongo"
 	"github.com/raisultan/url-shortener/services/main/internal/storage/sqlite"
 	"golang.org/x/exp/slog"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 type Storage interface {
@@ -70,7 +71,12 @@ func main() {
 	router.Use(middleware.URLFormat)
 
 	agc := alias.NewAliasGeneratorClient(cfg.AliasGenerator)
-	analyticsTracker := clickhouse.NewClickHouseAnalyticsTracker()
+	analyticsTracker, err := clickhouse.NewClickHouseAnalyticsTracker(cfg.ClickHouse)
+	if err != nil {
+		log.Error("failed to initialize analytics storage", sl.Err(err))
+		os.Exit(1)
+	}
+	defer analyticsTracker.Close(log)
 
 	router.Post("/url", save.New(log, storage, cache, agc))
 	router.Get("/{alias}", redirect.New(log, storage, cache, analyticsTracker))

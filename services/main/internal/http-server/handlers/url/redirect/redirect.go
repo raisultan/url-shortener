@@ -3,6 +3,7 @@ package redirect
 import (
 	"context"
 	"errors"
+	"github.com/go-chi/render"
 	"github.com/raisultan/url-shortener/lib/api/response"
 	"github.com/raisultan/url-shortener/lib/logger/sl"
 	"github.com/raisultan/url-shortener/services/main/internal/analytics"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/render"
 	"golang.org/x/exp/slog"
 )
 
@@ -50,27 +50,25 @@ func New(
 		alias := chi.URLParam(r, "alias")
 		resUrl, err := urlGetterCache.GetUrl(r.Context(), alias)
 		if err != nil {
-			log.Info("url not found in cache", "alias", alias)
+			log.Info("url not found in cache, checking storage", "alias", alias)
+			resUrl, err = urlGetterStorage.GetUrl(r.Context(), alias)
+			if errors.Is(err, storage.ErrUrlNotFound) {
+				log.Info("url not found", "alias", alias)
+				render.JSON(w, r, response.Error("url not found"))
+				return
+			}
+			if err != nil {
+				log.Error("failed to get url from storage", sl.Err(err))
+				render.JSON(w, r, response.Error("internal error"))
+				return
+			} else {
+				log.Info("got url from storage", slog.String("url", resUrl))
+			}
 		} else {
 			log.Info("got url from cache", slog.String("url", resUrl))
-			http.Redirect(w, r, resUrl, http.StatusFound)
-			return
-		}
-
-		resUrl, err = urlGetterStorage.GetUrl(r.Context(), alias)
-		if errors.Is(err, storage.ErrUrlNotFound) {
-			log.Info("url not found", "alias", alias)
-			render.JSON(w, r, response.Error("url not found"))
-			return
-		}
-		if err != nil {
-			log.Error("failed to generate url", sl.Err(err))
-			render.JSON(w, r, response.Error("internal error"))
-			return
 		}
 
 		latency := time.Since(startTime)
-
 		event := analytics.ClickEvent{
 			URLAlias:  alias,
 			Timestamp: time.Now(),
@@ -79,9 +77,14 @@ func New(
 			Referrer:  r.Referer(),
 			Latency:   latency,
 		}
-		go analyticsTracker.TrackClickEvent(event)
 
-		log.Info("got url from storage", slog.String("url", resUrl))
+		err = analyticsTracker.TrackClickEvent(event)
+		if err != nil {
+			log.Error("failed to send click analytics event", sl.Err(err))
+		} else {
+			log.Info("sent click analytics event", slog.Any("click-event", event))
+		}
+
 		http.Redirect(w, r, resUrl, http.StatusFound)
 	}
 }
