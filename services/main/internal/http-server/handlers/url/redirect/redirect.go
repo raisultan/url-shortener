@@ -52,34 +52,15 @@ func New(
 		)
 
 		startTime := time.Now()
-
 		alias := chi.URLParam(r, "alias")
-		resUrl, err := urlGetterCache.GetUrl(r.Context(), alias)
-
-		var errMessage string
-		if err != nil {
-			log.Info("url not found in cache, checking storage", "alias", alias)
-
-			resUrl, err = urlGetterStorage.GetUrl(r.Context(), alias)
-			if err != nil {
-				if errors.Is(err, storage.ErrUrlNotFound) {
-					log.Info("url not found in storage", "alias", alias)
-					errMessage = urlNotFoundMessage
-				} else {
-					log.Error("failed to get url from storage", sl.Err(err))
-					errMessage = internalErrorMessage
-				}
-			} else {
-				log.Info("got url from storage", slog.String("url", resUrl))
-			}
-		} else {
-			log.Info("got url from cache", slog.String("url", resUrl))
-		}
+		resUrl, errMessage := getUrl(r.Context(), log, urlGetterCache, urlGetterStorage, alias)
 
 		latency := time.Since(startTime)
-		err = analyticsTracker.TrackClickEvent(r, alias, latency, errMessage)
+		err := analyticsTracker.TrackClickEvent(r, alias, latency, errMessage)
 		if err != nil {
 			log.Error("failed to send click analytics event", sl.Err(err))
+		} else {
+			log.Info("click event sent to analytics storage")
 		}
 
 		if errMessage != "" {
@@ -88,4 +69,34 @@ func New(
 			http.Redirect(w, r, resUrl, http.StatusFound)
 		}
 	}
+}
+
+func getUrl(
+	ctx context.Context,
+	log *slog.Logger,
+	urlGetterCache UrlGetterCache,
+	urlGetterStorage UrlGetterStorage,
+	alias string,
+) (string, string) {
+	resUrl, err := urlGetterCache.GetUrl(ctx, alias)
+	if err == nil {
+		log.Info("got url from cache", slog.String("url", resUrl))
+		return resUrl, ""
+	}
+
+	log.Info("url not found in cache, checking storage", "alias", alias)
+	resUrl, err = urlGetterStorage.GetUrl(ctx, alias)
+
+	if errors.Is(err, storage.ErrUrlNotFound) {
+		log.Info("url not found in storage", "alias", alias)
+		return "", urlNotFoundMessage
+	}
+
+	if err != nil {
+		log.Error("failed to get url from storage", sl.Err(err))
+		return "", internalErrorMessage
+	}
+
+	log.Info("got url from storage", slog.String("url", resUrl))
+	return resUrl, ""
 }
