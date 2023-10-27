@@ -76,3 +76,10 @@ docker run -d -p 3000:3000 \
     --mount type=bind,source=$PWD/plugins/ch.jar,destination=/plugins/clickhouse.jar \
     metabase/metabase:$METABASE_DOCKER_VERSION
 ```
+
+Build Docker Container For Alias Generator
+```shell
+docker build -f services/alias-gen/build/Dockerfile -t alias-gen .
+
+docker run -e CONFIG_PATH=config/local.yaml -p 8082:8082 --name alias-gen alias-gen
+```

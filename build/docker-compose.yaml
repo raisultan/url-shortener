@@ -1,0 +1,63 @@
+version: '3'
+services:
+  alias-gen:
+    build:
+      context: ..
+      dockerfile: services/alias-gen/build/Dockerfile
+    volumes:
+      - ../services/alias-gen/config:/config
+    depends_on:
+      - postgres
+    environment:
+      - CONFIG_PATH=config/staging.yaml
+    networks:
+      - url-shortener
+
+  url-shortener:
+    build:
+      context: ..
+      dockerfile: services/main/build/Dockerfile
+    volumes:
+      - ../services/main/config:/config
+    ports:
+      - "8080:8080"
+    depends_on:
+      - clickhouse
+      - redis
+      - alias-gen
+
+    environment:
+      - CONFIG_PATH=config/staging.yaml
+    networks:
+      - url-shortener
+
+  redis:
+    image: redis:latest
+    networks:
+      - url-shortener
+
+  postgres:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=alias-gen
+      - POSTGRES_PASSWORD=alias-gen
+      - POSTGRES_DB=url-aliases
+    networks:
+      - url-shortener
+
+  clickhouse:
+    image: yandex/clickhouse-server
+    container_name: clickhouse
+    environment:
+      - CLICKHOUSE_DB=staging
+      - CLICKHOUSE_SERVER__LISTEN_HOST=0.0.0.0
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    networks:
+      - url-shortener
+
+networks:
+  url-shortener:
+    driver: bridge
