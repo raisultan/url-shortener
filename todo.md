@@ -10,11 +10,11 @@
         - [x] Separate Main Service
     - [x] Add KGS to MonoRepo
     - [x] Add KGS call to Main Service
-[ ] Analytics Storage with UI
+- [ ] Analytics Storage with UI
     - [x] Base Event Model
     - [x] Add ClickHouse
     - [x] Send Event To ClickHouse
-    - [ ] Extend Event
+    - [+] Extend Event
     - [ ] Add Metabase UI
 
 ## Analytics

@@ -3,6 +3,8 @@ package clickhouse
 import (
 	"database/sql"
 	"fmt"
+	"net/http"
+	"time"
 
 	_ "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/raisultan/url-shortener/lib/logger/sl"
@@ -32,7 +34,8 @@ func NewClickHouseAnalyticsTracker(cfg config.ClickHouse) (*AnalyticsTracker, er
 			user_agent String,
 			ip String,
 			referrer String,
-			latency UInt64
+			latency UInt64,
+			error String
 		) ENGINE = MergeTree()
 		ORDER BY timestamp
 	`
@@ -50,7 +53,22 @@ func (tracker *AnalyticsTracker) Close(log *slog.Logger) {
 	}
 }
 
-func (tracker *AnalyticsTracker) TrackClickEvent(event analytics.ClickEvent) error {
+func (tracker *AnalyticsTracker) TrackClickEvent(
+	r *http.Request,
+	alias string,
+	latency time.Duration,
+	errMessage string,
+) error {
+	event := analytics.ClickEvent{
+		URLAlias:  alias,
+		Timestamp: time.Now(),
+		UserAgent: r.UserAgent(),
+		IP:        r.RemoteAddr,
+		Referrer:  r.Referer(),
+		Latency:   latency,
+		Error:     errMessage,
+	}
+
 	query := `
 		INSERT INTO testing.clicks (
 			url_alias,
@@ -58,8 +76,9 @@ func (tracker *AnalyticsTracker) TrackClickEvent(event analytics.ClickEvent) err
 			user_agent,
 			ip,
 			referrer,
-			latency
-		) VALUES (?, ?, ?, ?, ?, ?)
+			latency,
+			error
+		) VALUES (?, ?, ?, ?, ?, ?, ?)
 	`
 
 	_, err := tracker.db.Exec(
@@ -70,6 +89,7 @@ func (tracker *AnalyticsTracker) TrackClickEvent(event analytics.ClickEvent) err
 		event.IP,
 		event.Referrer,
 		event.Latency.Milliseconds(),
+		event.Error,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to insert click event: %w", err)

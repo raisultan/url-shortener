@@ -9,4 +9,5 @@ type ClickEvent struct {
 	IP        string
 	Referrer  string
 	Latency   time.Duration
+	Error     string
 }
