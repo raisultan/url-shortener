@@ -6,7 +6,7 @@ COPY . .
 
 RUN CGO_ENABLED=1 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o ./url-shortener ./services/main/cmd/url-shortener
 
-COPY services/main/build/wait-for-it.sh /src/wait-for-it.sh
+COPY build/wait-for-it.sh /src/wait-for-it.sh
 RUN chmod +x /src/wait-for-it.sh
 
 FROM debian:buster-slim
@@ -20,5 +20,5 @@ COPY --from=builder /src/wait-for-it.sh /wait-for-it.sh
 
 COPY services/main/config/ /config/
 
-ENTRYPOINT ["/wait-for-it.sh", "clickhouse", "--"]
+ENTRYPOINT ["/wait-for-it.sh", "clickhouse", "9000", "ClickHouse", "--"]
 CMD ["/url-shortener"]

@@ -6,7 +6,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -v -o alias-gen services/alias-gen/cmd/alias-gen/main.go
 
-COPY services/alias-gen/build/wait-for-it.sh /src/wait-for-it.sh
+COPY build/wait-for-it.sh /src/wait-for-it.sh
 RUN chmod +x /src/wait-for-it.sh
 
 FROM debian:buster-slim
@@ -20,5 +20,5 @@ COPY --from=builder /src/wait-for-it.sh /wait-for-it.sh
 
 COPY services/alias-gen/config/ /config/
 
-ENTRYPOINT ["/wait-for-it.sh", "postgres", "--"]
+ENTRYPOINT ["/wait-for-it.sh", "postgres", "5432", "PostgreSQL", "--"]
 CMD ["/alias-gen"]
