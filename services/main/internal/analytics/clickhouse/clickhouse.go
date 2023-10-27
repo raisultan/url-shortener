@@ -14,7 +14,8 @@ import (
 )
 
 type AnalyticsTracker struct {
-	db *sql.DB
+	db     *sql.DB
+	dbName string
 }
 
 func NewClickHouseAnalyticsTracker(cfg config.ClickHouse) (*AnalyticsTracker, error) {
@@ -27,8 +28,9 @@ func NewClickHouseAnalyticsTracker(cfg config.ClickHouse) (*AnalyticsTracker, er
 		return nil, fmt.Errorf("failed to ping ClickHouse: %w", err)
 	}
 
-	createTableIfNotExistsQuery := `
-		CREATE TABLE IF NOT EXISTS testing.clicks (
+	dbName := cfg.Database
+	createTableIfNotExistsQuery := fmt.Sprintf(`
+		CREATE TABLE IF NOT EXISTS %s.clicks (
 			url_alias String,
 			timestamp DateTime,
 			user_agent String,
@@ -38,12 +40,12 @@ func NewClickHouseAnalyticsTracker(cfg config.ClickHouse) (*AnalyticsTracker, er
 			error String
 		) ENGINE = MergeTree()
 		ORDER BY timestamp
-	`
+	`, dbName)
 	if _, err := conn.Exec(createTableIfNotExistsQuery); err != nil {
 		return nil, fmt.Errorf("failed to create table: %w", err)
 	}
 
-	return &AnalyticsTracker{db: conn}, nil
+	return &AnalyticsTracker{db: conn, dbName: dbName}, nil
 }
 
 func (tracker *AnalyticsTracker) Close(log *slog.Logger) {
@@ -69,8 +71,8 @@ func (tracker *AnalyticsTracker) TrackClickEvent(
 		Error:     errMessage,
 	}
 
-	query := `
-		INSERT INTO testing.clicks (
+	query := fmt.Sprintf(`
+		INSERT INTO %s.clicks (
 			url_alias,
 			timestamp,
 			user_agent,
@@ -79,7 +81,7 @@ func (tracker *AnalyticsTracker) TrackClickEvent(
 			latency,
 			error
 		) VALUES (?, ?, ?, ?, ?, ?, ?)
-	`
+	`, tracker.dbName)
 
 	_, err := tracker.db.Exec(
 		query,

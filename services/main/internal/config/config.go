@@ -30,7 +30,8 @@ type AliasGenerator struct {
 }
 
 type ClickHouse struct {
-	Dsn string `yaml:"dsn" env-required:"true"`
+	Dsn      string `yaml:"dsn" env-required:"true"`
+	Database string `yaml:"database" env-default:"testing"`
 }
 
 type Storages struct {
