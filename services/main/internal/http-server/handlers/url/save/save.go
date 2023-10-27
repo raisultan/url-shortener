@@ -24,7 +24,6 @@ type Response struct {
 	Alias string `json:"alias,omitempty"`
 }
 
-//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlSaverStorage
 type UrlSaverStorage interface {
 	SaveUrl(
 		ctx context.Context,
@@ -33,7 +32,6 @@ type UrlSaverStorage interface {
 	) error
 }
 
-//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlSaverCache
 type UrlSaverCache interface {
 	SaveUrl(
 		ctx context.Context,
@@ -42,7 +40,6 @@ type UrlSaverCache interface {
 	) error
 }
 
-//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=AliasGenerator
 type AliasGenerator interface {
 	GenerateAlias() (string, error)
 }

@@ -20,17 +20,14 @@ const (
 	internalErrorMessage = "internal error"
 )
 
-//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlGetterStorage
 type UrlGetterStorage interface {
 	GetUrl(ctx context.Context, alias string) (string, error)
 }
 
-//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=UrlGetterCache
 type UrlGetterCache interface {
 	GetUrl(ctx context.Context, alias string) (string, error)
 }
 
-//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=AnalyticsTracker
 type AnalyticsTracker interface {
 	TrackClickEvent(
 		r *http.Request,
