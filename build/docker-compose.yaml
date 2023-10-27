@@ -33,11 +33,15 @@ services:
 
   redis:
     image: redis:latest
+    volumes:
+      - redis_data:/data
     networks:
       - url-shortener
 
   postgres:
     image: postgres:latest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=alias-gen
       - POSTGRES_PASSWORD=alias-gen
@@ -48,6 +52,8 @@ services:
   clickhouse:
     image: yandex/clickhouse-server
     container_name: clickhouse
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
     environment:
       - CLICKHOUSE_DB=staging
       - CLICKHOUSE_SERVER__LISTEN_HOST=0.0.0.0
@@ -66,9 +72,18 @@ services:
     ports:
       - "3000:3000"
     volumes:
+      - metabase_data:/metabase-data
       - ../build/metabase/plugins:/plugins
+    environment:
+      - MB_DB_FILE=/metabase-data/metabase.db
     depends_on:
       - clickhouse
+
+volumes:
+  redis_data:
+  postgres_data:
+  clickhouse_data:
+  metabase_data:
 
 networks:
   url-shortener:
