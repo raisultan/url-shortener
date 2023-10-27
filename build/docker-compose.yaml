@@ -58,6 +58,18 @@ services:
     networks:
       - url-shortener
 
+  metabase:
+    image: metabase/metabase:v0.47.2
+    container_name: metabase
+    networks:
+      - url-shortener
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../build/metabase/plugins:/plugins
+    depends_on:
+      - clickhouse
+
 networks:
   url-shortener:
     driver: bridge
