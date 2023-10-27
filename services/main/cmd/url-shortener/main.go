@@ -49,7 +49,7 @@ func main() {
 	)
 	defer cancel()
 
-	storage, err := NewStorage(cfg, ctx)
+	storage, err := newStorage(cfg, ctx)
 	if err != nil {
 		log.Error("failed to initialize storage", sl.Err(err))
 		os.Exit(1)
@@ -116,7 +116,7 @@ func main() {
 	log.Info("server stopped")
 }
 
-func NewStorage(cfg *config.Config, ctx context.Context) (Storage, error) {
+func newStorage(cfg *config.Config, ctx context.Context) (Storage, error) {
 	switch cfg.ActiveStorage {
 	case "sqlite":
 		return sqlite.New(
