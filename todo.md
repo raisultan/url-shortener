@@ -17,7 +17,8 @@
     - [x] Extend Event
     - [x] Add Metabase UI
 - [x] Refactor
-- [ ] Dockerize
+- [x] Dockerize
+- [ ] Commands in Makefile
 
 ## Analytics
 ### Usage Analytics
@@ -37,49 +38,3 @@
 Storage: ClickHouse
 
 UI: Metabase
-
-## Useful Commands
-Start Postgres Container
-```shell
-docker run --name alias-gen-postgres -e POSTGRES_USER=alias-gen -e POSTGRES_PASSWORD=alias-gen -e POSTGRES_DB=url-aliases -d -p 5432:5432 postgres
-```
-
-Docker Network For ClickHouse and Metabase
-```shell
-# create
-docker network create url-shortener
-
-# inspect
-docker network inspect url-shortener
-```
-
-Start ClickHouse Container
-```shell
-docker run -d --name clickhouse-server \
-    --ulimit nofile=262144:262144 \
-    -p 9000:9000 -p 8123:8123 \
-    -e CLICKHOUSE_DB=testing \
-    -e CLICKHOUSE_SERVER__LISTEN_HOST='0.0.0.0' \
-    --network url-shortener \
-    yandex/clickhouse-server
-```
-
-Start Metabase Container
-```shell
-export METABASE_DOCKER_VERSION=v0.47.2
-export METABASE_CLICKHOUSE_DRIVER_VERSION=1.2.2
-
-mkdir -p mb/plugins && cd mb
-curl -L -o plugins/ch.jar https://github.com/ClickHouse/metabase-clickhouse-driver/releases/download/1.2.2/clickhouse.metabase-driver.jar
-docker run -d -p 3000:3000 \
-    --network url-shortener \
-    --mount type=bind,source=$PWD/plugins/ch.jar,destination=/plugins/clickhouse.jar \
-    metabase/metabase:$METABASE_DOCKER_VERSION
-```
-
-Build Docker Container For Alias Generator
-```shell
-docker build -f services/alias-gen/build/Dockerfile -t alias-gen .
-
-docker run -e CONFIG_PATH=config/local.yaml -p 8082:8082 --name alias-gen alias-gen
-```
