@@ -38,3 +38,11 @@ run-metabase:
 	--network url-shortener \
 	--mount type=bind,source=$(shell pwd)/mb/plugins/clickhouse.jar,destination=/plugins/clickhouse.jar \
 	metabase/metabase:v0.47.2
+
+run-alias-gen:
+	@echo "Running alias-gen service..."
+	go run services/alias-gen/cmd/alias-gen/main.go
+
+run-main:
+	@echo "Running main service..."
+	go run services/main/cmd/url-shortener/main.go

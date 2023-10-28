@@ -1,0 +1,20 @@
+env: "local"
+http_server:
+  address: "0.0.0.0:8080"
+  timeout: 3s
+  idle_timeout: 60s
+  ctx_timeout: 10s
+active_storage: "mongo"
+storages:
+  sqlite:
+    storage_path: "./storage/storage.db"
+  mongo:
+    uri: "your cloud mongo URI"
+alias_generator:
+  address: "http://alias-gen:8082"
+  timeout: 1s
+clickhouse:
+  dsn: "tcp://clickhouse:9000?username=default&password=&read_timeout=10s"
+  database: "production"
+cache:
+  url: "redis://redis:6379/0"

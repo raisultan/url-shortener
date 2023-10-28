@@ -9,7 +9,7 @@ services:
     depends_on:
       - postgres
     environment:
-      - CONFIG_PATH=config/staging.yaml
+      - CONFIG_PATH=config/production.yaml
     networks:
       - url-shortener
 
@@ -27,7 +27,7 @@ services:
       - alias-gen
 
     environment:
-      - CONFIG_PATH=config/staging.yaml
+      - CONFIG_PATH=config/production.yaml
     networks:
       - url-shortener
 
@@ -55,7 +55,7 @@ services:
     volumes:
       - clickhouse_data:/var/lib/clickhouse
     environment:
-      - CLICKHOUSE_DB=staging
+      - CLICKHOUSE_DB=production
       - CLICKHOUSE_SERVER__LISTEN_HOST=0.0.0.0
     ulimits:
       nofile:

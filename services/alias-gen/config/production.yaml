@@ -1,0 +1,11 @@
+http_server:
+  address: "0.0.0.0:8082"
+  timeout: 3s
+  idle_timeout: 60s
+  ctx_timeout: 10s
+postgres:
+  host: postgres
+  port: 5432
+  user: alias-gen
+  password: alias-gen
+  dbname: url-aliases
